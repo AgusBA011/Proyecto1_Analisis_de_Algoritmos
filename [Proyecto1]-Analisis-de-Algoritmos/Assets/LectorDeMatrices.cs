@@ -20,76 +20,74 @@ public class LectorDeMatrices : MonoBehaviour
     void Start()
     {
         obtainData();
-        Matriz = new int[columns, rows];
+        Matriz = new int[rows, columns];
 
-        for (int i = 0; i < columns; i++) {
-            for (int j = 0; j < rows; j++) {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < columns; j++) {
                 Matriz[i, j] = 0;
-                SpawnTile(i, -j, Matriz[i, j]);
+                SpawnTile(j, -i, Matriz[i, j]);
                 
             }
         }
 
+        //deductionNono(Matriz);
 
+        if (resolverNono(0, 0) == true) imprimirM(Matriz);
+        else
+        {
+            Debug.Log("verga");
+            imprimirM(Matriz);
+        }
 
     }
 
     //Función que resuelve el nonogram utilizando backtracking
-    bool resolverNono(int [,] Matriz) {
+    bool resolverNono(int i, int j) {
 
-        //Revisa si quedan espacios sin marcar ya ea un color o una X
+        //Revisa si quedan espacios sin marcar ya sea un color o una X
         if (emptySpace(Matriz) == false) {
             return true;
         }
-
-        //Inicio del ciclo que irá celda por celda de la matriz comprobando si sive o no
-        for (int i = 0; i < rows; i++){
-            for (int j = 0; j < columns; j++){
-                if (isSafe(Matriz, i, j) == true) {  //Hace un checkeo si es posible poner color en la celda dada
-
-                    Matriz[i, j] = 1;
-                    if (resolverNono(Matriz) == true) 
-                    //Llamada recursiva, hecho el cambio anterior avanza suponiendo que sí sirve. Se devuelve si no sirve.
-                    {
-                        return true;
-                    }
-                    //Si no sirve la única otra opción es que no sea ponerle color
-                    else {
-                        Matriz[i, j] = -1;
-                    }
-                }
-                else { //Si el isSafe da falso significa que es imposible poner colo en esa celda, por ende va con una X
-                    Matriz[i, j] = -1;
-                }
-            }
+        
+        if (j == columns) { 
+            i++;
+            j = 0;
         }
+        Debug.Log("Matriz: " + i.ToString() + " " + j.ToString());
+        if (i == rows) return true;
+
+        Matriz[i, j] = 1;
+
+        if (isSafe(Matriz, i, j) && resolverNono(i, j + 1)) return true;
+
+        Matriz[i, j] = -1;
+        if (isSafe(Matriz, i, j) && resolverNono(i, j + 1)) return true;
+
         return false;
+        
 
     }
     //Función que revisa si es posible colorear esa celda o no
     bool isSafe(int [,] Matriz, int i, int j){
 
-        if (isSafeR(Matriz, i, j) == true && isSafeC(Matriz, i, j) == true) return true;
-        return false;
+        Debug.Log("----------------------------------------------------");
+        return isSafeR(Matriz, i, j) && isSafeC(Matriz, i, j);
 
-    }
-
-
+    } // Arreglar estas funciones
     bool isSafeR(int[,] Matriz, int i, int j) {
-
+        /*
         //Checkeo de la fila
         int counter = 0;
         int slot = 0;
         if (j == 0) return true;
         foreach (string pista in pistasFilas[i])
         {
-
             while (slot != j)
             {
 
                 if (Matriz[i, slot] == 1) counter++;
 
-                if (Matriz[i, slot] == -1) counter = 0;
+                else { counter = 0; }
 
                 if (int.Parse(pista) == counter)
                 {
@@ -102,40 +100,139 @@ public class LectorDeMatrices : MonoBehaviour
                 if (slot == j) return true;
             }
         }
-        return false;
+        return false;*/
+
+
+
+        //Checkeo de la fila
+
+        int k = 0;
+        int acc = 0;
+        bool isLast = false;
+        Debug.Log("New");
+        for (int aux = 0; aux <= j; aux++)
+        {
+            Debug.Log("Rows");
+            Debug.Log(i.ToString() + aux.ToString() + " : " + Matriz[i, aux].ToString());
+            if (Matriz[i, aux] == 1)
+            {
+                acc++;
+                if (isLast != true)
+                {
+                    if (k >= pistasFilas[i].Count) return false;
+                }
+                isLast = true;
+            }
+            else
+            {
+                if (isLast == true)
+                {
+
+                    if (int.Parse(pistasFilas[i][k]) != acc) return false;
+                    acc = 0;
+                    k++;
+                }
+                isLast = false;
+            }
+
+        }
+        //Revisar si se terminó de revisar la columna
+        if (j == columns - 1)
+        {
+
+            if (isLast == true)
+            {
+                return k == pistasFilas[i].Count - 1 && acc == int.Parse(pistasFilas[i][k]);
+            }
+            else
+            {
+                return k == pistasFilas[i].Count;
+            }
+
+        }
+        else
+        {
+            if (isLast)
+            {
+                return acc <= int.Parse(pistasFilas[i][k]);
+            }
+        }
+        return true;
+
     }
 
     bool isSafeC(int[,] Matriz, int i, int j)
     {
 
         //Checkeo de la fila
-        int counter = 0;
-        int slot = 0;
-        if (i == 0) return true;
-        foreach (string pista in pistasColumnas[i])
-        {
 
-            while (slot != i)
+        int k = 0;
+        int acc = 0;
+        bool isLast = false;
+        Debug.Log("New");
+        for (int aux = 0; aux <= i; aux++) {
+            Debug.Log("Columns");
+            Debug.Log(aux.ToString() + j.ToString() + " : " + Matriz[aux,j].ToString());
+            if (Matriz[aux, j] == 1)
             {
-
-                if (Matriz[slot, j] == 1) counter++;
-
-                if (Matriz[slot, j] == -1) counter = 0;
-
-                if (int.Parse(pista) == counter)
+                acc++;
+                if (isLast != true)
                 {
-                    if (slot + 1 == i) return false;
-                    slot++;
-                    break;
+                    if (k >= pistasColumnas[j].Count) return false;
                 }
-                slot++;
+                isLast = true;
+            }
+            else {
+                if (isLast == true) {
+                    
+                    if (int.Parse(pistasColumnas[j][k]) != acc) return false;
+                    acc = 0;
+                    k++;
+                }
+                isLast = false;
+            }
 
-                if (slot == i) return true;
+        }
+        //Revisar si se terminó de revisar la columna
+        if (i == rows - 1)
+        {
+            
+            if (isLast == true)
+            {
+                return k == pistasColumnas[j].Count - 1 && acc == int.Parse(pistasColumnas[j][k]);
+            }
+            else
+            {
+                return k == pistasColumnas[j].Count;
+            }
+
+        }
+        else {
+            if (isLast) {
+                return acc <= int.Parse(pistasColumnas[j][k]);
             }
         }
-        return false;
+        return true;
     }
 
+
+    void imprimirM(int[,] Matriz) {
+
+        int rowLength = Matriz.GetLength(0);
+        int colLength = Matriz.GetLength(1);
+        string arrayString = "";
+        for (int i = 0; i < rowLength; i++)
+        {
+            for (int j = 0; j < colLength; j++)
+            {
+                arrayString += string.Format("{0} ", Matriz[i, j]);
+            }
+            arrayString += System.Environment.NewLine + System.Environment.NewLine;
+            Debug.Log(arrayString);
+            arrayString = "";
+        }
+
+    }
 
     //Función que revisa todas las celdas y ve si falta una por colorear o poner una X
     bool emptySpace(int[,] Matriz) {
@@ -149,6 +246,69 @@ public class LectorDeMatrices : MonoBehaviour
         }
         return false;
     }
+
+
+
+    void deductionNono(int[,] Matriz) {
+
+        int a = 0;
+
+        foreach (string pista in pistasFilas[0]) {
+
+            if (pistasFilas.Count == 1) {
+                int resta = rows - int.Parse(pista);
+                for (int i = resta; i < rows - resta; i++)
+                {
+
+                    Matriz[a, i] = 1;
+                }
+            }
+            a++;
+
+        }
+        a = 0;
+        foreach (string pista in pistasColumnas[0])
+        {
+
+            if (pistasColumnas.Count == 1)
+            {
+                int resta = rows - int.Parse(pista);
+                for (int i = resta; i < rows - resta; i++)
+                {
+
+                    Matriz[i, a] = 1;
+                }
+            }
+            a++;
+
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     private void SpawnTile(int x, int y, int value) {
         GameObject g = new GameObject("X: " + x + "Y:" + -y);
@@ -180,7 +340,7 @@ public class LectorDeMatrices : MonoBehaviour
                 {
                     if (i == 0) rows = int.Parse(aux[i]);
                     if (i == 1) columns = int.Parse(aux[i]);
-                    Debug.Log(aux[i]);
+                    
                 }
                 con++;
             }
@@ -205,7 +365,7 @@ public class LectorDeMatrices : MonoBehaviour
                     foreach (string i in aux)
                     {
                         aux2.Add(i);
-                        Debug.Log("Estoy agregando para filas:" + i);
+                        //Debug.Log("Estoy agregando para filas:" + i);
                     }
                     pistasFilas.Add(aux2);
                 }
@@ -221,7 +381,7 @@ public class LectorDeMatrices : MonoBehaviour
                     foreach (string i in aux)
                     {
                         aux2.Add(i);
-                        Debug.Log("Estoy agregando para columnas:" + i);
+                        //Debug.Log("Estoy agregando para columnas:" + i);
                     }
                     pistasColumnas.Add(aux2);
                 }
@@ -229,7 +389,7 @@ public class LectorDeMatrices : MonoBehaviour
 
         }
         //TESTING
-        for (int e = 0; e < pistasFilas.Count; e++)
+        /*for (int e = 0; e < pistasFilas.Count; e++)
         {
             for (int i = 0; i < pistasFilas[e].Count; i++)
             {
@@ -244,7 +404,7 @@ public class LectorDeMatrices : MonoBehaviour
 
                 Debug.Log("Pistas de columnas:" + pistasColumnas[e][i]);
             }
-        }
+        }*/
     }
 
 
