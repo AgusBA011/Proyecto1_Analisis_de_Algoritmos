@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
+using UnityEngine.SceneManagement;
 
 public class LectorDeMatrices : MonoBehaviour
 {
@@ -11,24 +12,37 @@ public class LectorDeMatrices : MonoBehaviour
 
     public  List<List<string>> pistasColumnas = new List<List<string>>();
 
+    public GameObject[,] cuadros;
+
     public int rows, columns;
     
     public int[,] Matriz;
 
-    public Sprite sprite;
+    public Sprite spriteEmpty;
 
-    void Start()
-    {
+    public Sprite spriteFill;
+
+
+    void Start() {
+
         obtainData();
         Matriz = new int[rows, columns];
+        cuadros = new GameObject[rows, columns];
 
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < columns; j++) {
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < columns; j++)
+            {
                 Matriz[i, j] = 0;
                 SpawnTile(j, -i, Matriz[i, j]);
-                
+
             }
         }
+
+    }
+
+
+    public void startSolution() {
 
         //deductionNono(Matriz);
 
@@ -38,7 +52,12 @@ public class LectorDeMatrices : MonoBehaviour
             Debug.Log("verga");
             imprimirM(Matriz);
         }
+    }
 
+    //Función para volver al menú, se le otorga a un botón.
+    public void BackMenu()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
     }
 
     //Función que resuelve el nonogram utilizando backtracking
@@ -53,14 +72,18 @@ public class LectorDeMatrices : MonoBehaviour
             i++;
             j = 0;
         }
-        Debug.Log("Matriz: " + i.ToString() + " " + j.ToString());
+        //Debug.Log("Matriz: " + i.ToString() + " " + j.ToString());
         if (i == rows) return true;
 
         Matriz[i, j] = 1;
+        GameObject aux = cuadros[i, j];
+
+        aux.GetComponent<SpriteRenderer>().sprite = spriteFill;
 
         if (isSafe(Matriz, i, j) && resolverNono(i, j + 1)) return true;
 
         Matriz[i, j] = -1;
+        aux.GetComponent<SpriteRenderer>().sprite = spriteEmpty;
         if (isSafe(Matriz, i, j) && resolverNono(i, j + 1)) return true;
 
         return false;
@@ -70,50 +93,22 @@ public class LectorDeMatrices : MonoBehaviour
     //Función que revisa si es posible colorear esa celda o no
     bool isSafe(int [,] Matriz, int i, int j){
 
-        Debug.Log("----------------------------------------------------");
         return isSafeR(Matriz, i, j) && isSafeC(Matriz, i, j);
 
-    } // Arreglar estas funciones
+    } // Inicio de la función para revisar si un cuadro s ele es seguro pintarlo revisando filas y columnas.
+
+    //Función que revisa si dado un cuadro, este puede ser coloreado o no. PARA LAS FILAS
     bool isSafeR(int[,] Matriz, int i, int j) {
-        /*
-        //Checkeo de la fila
-        int counter = 0;
-        int slot = 0;
-        if (j == 0) return true;
-        foreach (string pista in pistasFilas[i])
-        {
-            while (slot != j)
-            {
-
-                if (Matriz[i, slot] == 1) counter++;
-
-                else { counter = 0; }
-
-                if (int.Parse(pista) == counter)
-                {
-                    if (slot + 1 == j) return false;
-                    slot++;
-                    break;
-                }
-                slot++;
-
-                if (slot == j) return true;
-            }
-        }
-        return false;*/
-
-
-
         //Checkeo de la fila
 
         int k = 0;
         int acc = 0;
         bool isLast = false;
-        Debug.Log("New");
+        
         for (int aux = 0; aux <= j; aux++)
         {
-            Debug.Log("Rows");
-            Debug.Log(i.ToString() + aux.ToString() + " : " + Matriz[i, aux].ToString());
+            //Debug.Log("Rows");
+            //Debug.Log(i.ToString() + aux.ToString() + " : " + Matriz[i, aux].ToString());
             if (Matriz[i, aux] == 1)
             {
                 acc++;
@@ -161,6 +156,7 @@ public class LectorDeMatrices : MonoBehaviour
 
     }
 
+    //Función que revisa si dado un cuadro, este puede ser coloreado o no. PARA LAS COLUMNAS
     bool isSafeC(int[,] Matriz, int i, int j)
     {
 
@@ -169,10 +165,10 @@ public class LectorDeMatrices : MonoBehaviour
         int k = 0;
         int acc = 0;
         bool isLast = false;
-        Debug.Log("New");
+        
         for (int aux = 0; aux <= i; aux++) {
-            Debug.Log("Columns");
-            Debug.Log(aux.ToString() + j.ToString() + " : " + Matriz[aux,j].ToString());
+            //Debug.Log("Columns");
+            //Debug.Log(aux.ToString() + j.ToString() + " : " + Matriz[aux,j].ToString());
             if (Matriz[aux, j] == 1)
             {
                 acc++;
@@ -215,7 +211,7 @@ public class LectorDeMatrices : MonoBehaviour
         return true;
     }
 
-
+    //Imprimir la matriz en consola, esto es para pruebas
     void imprimirM(int[,] Matriz) {
 
         int rowLength = Matriz.GetLength(0);
@@ -248,7 +244,7 @@ public class LectorDeMatrices : MonoBehaviour
     }
 
 
-
+    //Función que deduce solamente utilizando las pistas, si un cuadro debe ir ahí o no. Esto es antes de empezar el bactracking.
     void deductionNono(int[,] Matriz) {
 
         int a = 0;
@@ -285,126 +281,119 @@ public class LectorDeMatrices : MonoBehaviour
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    //Función para crear el Nonogram en pantalla
     private void SpawnTile(int x, int y, int value) {
-        GameObject g = new GameObject("X: " + x + "Y:" + -y);
+        GameObject g = new GameObject("X: " + x + " Y:" + -y);
         g.transform.position = new Vector3(x - 2.5f, y - 2.5f);
         var s = g.AddComponent<SpriteRenderer>();
-        s.sprite = sprite;
+        s.sprite = spriteEmpty;
+
+        cuadros[-y,x] = g;
 
      }
 
 
     void obtainData() {
+        //"C:/Users/Agus/Documents/GitHub/Proyecto1_Analisis_de_Algoritmos/[Proyecto1]-Analisis-de-Algoritmos/Assets/nonogram.txt"
 
-        StreamReader sr = new StreamReader("C:/Users/Agus/Documents/GitHub/Proyecto1_Analisis_de_Algoritmos/[Proyecto1]-Analisis-de-Algoritmos/Assets/nonogram.txt");
-        string line = "";
+        Main_Menu obj = new Main_Menu();
 
-
-        string[] aux;
-        short con = 0;
-
-
-
-        while ((line = sr.ReadLine()) != null)
-        { //Lee todas las lineas dentro del .txt
-
-            if (con == 0)
-            { //Obtener el num de columnas y filas
-                aux = line.Split(',');
-                for (int i = 0; i < 2; i++)
-                {
-                    if (i == 0) rows = int.Parse(aux[i]);
-                    if (i == 1) columns = int.Parse(aux[i]);
-                    
-                }
-                con++;
-            }
-
-            if (line.Equals("FILAS") == true)
-            { //Sección del txt donde dan las pistas de las filas
-                con++;
-            }
-            if (line.Equals("COLUMNAS") == true)//Sección del txt donde dan las pistas de las columnas
-            {
-                con++;
-            }
-
-            if (con == 2)
-            { //Obtener las pistas que hay en cada fila
-                if (line.Equals("FILAS") != true)
-                {
-
-                    List<string> aux2 = new List<string>();
-                    aux = line.Split(',');
-
-                    foreach (string i in aux)
-                    {
-                        aux2.Add(i);
-                        //Debug.Log("Estoy agregando para filas:" + i);
-                    }
-                    pistasFilas.Add(aux2);
-                }
-
-            }
-
-            if (con == 3)
-            { //Obtener las pistas que hay en cada columna
-                if (line.Equals("COLUMNAS") != true)
-                {
-                    List<string> aux2 = new List<string>();
-                    aux = line.Split(',');
-                    foreach (string i in aux)
-                    {
-                        aux2.Add(i);
-                        //Debug.Log("Estoy agregando para columnas:" + i);
-                    }
-                    pistasColumnas.Add(aux2);
-                }
-            }
-
-        }
-        //TESTING
-        /*for (int e = 0; e < pistasFilas.Count; e++)
+        if (obj.getNonoGramPath() == "")
         {
-            for (int i = 0; i < pistasFilas[e].Count; i++)
-            {
-
-                Debug.Log("Pistas de filas:" + pistasFilas[e][i]);
-            }
+            Debug.Log("Debe elegir un Nonogram");
         }
-        for (int e = 0; e < pistasColumnas.Count; e++)
-        {
-            for (int i = 0; i < pistasColumnas[e].Count; i++)
-            {
 
-                Debug.Log("Pistas de columnas:" + pistasColumnas[e][i]);
+        else
+        {
+
+            StreamReader sr = new StreamReader(obj.getNonoGramPath());
+
+
+
+            string line = "";
+
+
+            string[] aux;
+            short con = 0;
+
+
+
+            while ((line = sr.ReadLine()) != null)
+            { //Lee todas las lineas dentro del .txt
+
+                if (con == 0)
+                { //Obtener el num de columnas y filas
+                    aux = line.Split(',');
+                    for (int i = 0; i < 2; i++)
+                    {
+                        if (i == 0) rows = int.Parse(aux[i]);
+                        if (i == 1) columns = int.Parse(aux[i]);
+
+                    }
+                    con++;
+                }
+
+                if (line.Equals("FILAS") == true)
+                { //Sección del txt donde dan las pistas de las filas
+                    con++;
+                }
+                if (line.Equals("COLUMNAS") == true)//Sección del txt donde dan las pistas de las columnas
+                {
+                    con++;
+                }
+
+                if (con == 2)
+                { //Obtener las pistas que hay en cada fila
+                    if (line.Equals("FILAS") != true)
+                    {
+
+                        List<string> aux2 = new List<string>();
+                        aux = line.Split(',');
+
+                        foreach (string i in aux)
+                        {
+                            aux2.Add(i);
+                            //Debug.Log("Estoy agregando para filas:" + i);
+                        }
+                        pistasFilas.Add(aux2);
+                    }
+
+                }
+
+                if (con == 3)
+                { //Obtener las pistas que hay en cada columna
+                    if (line.Equals("COLUMNAS") != true)
+                    {
+                        List<string> aux2 = new List<string>();
+                        aux = line.Split(',');
+                        foreach (string i in aux)
+                        {
+                            aux2.Add(i);
+                            //Debug.Log("Estoy agregando para columnas:" + i);
+                        }
+                        pistasColumnas.Add(aux2);
+                    }
+                }
+
             }
-        }*/
+            //TESTING
+            /*for (int e = 0; e < pistasFilas.Count; e++)
+            {
+                for (int i = 0; i < pistasFilas[e].Count; i++)
+                {
+
+                    Debug.Log("Pistas de filas:" + pistasFilas[e][i]);
+                }
+            }
+            for (int e = 0; e < pistasColumnas.Count; e++)
+            {
+                for (int i = 0; i < pistasColumnas[e].Count; i++)
+                {
+
+                    Debug.Log("Pistas de columnas:" + pistasColumnas[e][i]);
+                }
+            }*/
+        }
     }
 
 
