@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using UnityEngine.SceneManagement;
+using System.Diagnostics;
+using UnityEngine.UI;
+using System;
 
 public class LectorDeMatrices : MonoBehaviour
 {
@@ -21,6 +24,13 @@ public class LectorDeMatrices : MonoBehaviour
     public Sprite spriteEmpty;
 
     public Sprite spriteFill;
+
+    public Text tiempo;
+
+    public GameObject pistasText;
+
+    private float coordenadasX = -2.83f;
+    private float coordenadasY = -2.16f;
 
 
     void Start() {
@@ -44,14 +54,26 @@ public class LectorDeMatrices : MonoBehaviour
 
     public void startSolution() {
 
-        //deductionNono(Matriz);
+        deductionNono(Matriz);
+        Stopwatch sw = new Stopwatch();
+
+        sw.Start();
 
         if (resolverNono(0, 0) == true) imprimirM(Matriz);
         else
         {
-            Debug.Log("verga");
+            UnityEngine.Debug.Log("No hay solución");
             imprimirM(Matriz);
         }
+        sw.Stop();
+
+        Text tm;
+       
+        tm = tiempo.GetComponent("Text") as Text;
+        tm.text = ((double)(sw.Elapsed.TotalMilliseconds * 1000000) /
+            1000000).ToString("0.00") + " ms";
+
+        //";
     }
 
     //Función para volver al menú, se le otorga a un botón.
@@ -72,7 +94,7 @@ public class LectorDeMatrices : MonoBehaviour
             i++;
             j = 0;
         }
-        //Debug.Log("Matriz: " + i.ToString() + " " + j.ToString());
+        
         if (i == rows) return true;
 
         Matriz[i, j] = 1;
@@ -224,7 +246,7 @@ public class LectorDeMatrices : MonoBehaviour
                 arrayString += string.Format("{0} ", Matriz[i, j]);
             }
             arrayString += System.Environment.NewLine + System.Environment.NewLine;
-            Debug.Log(arrayString);
+            UnityEngine.Debug.Log(arrayString);
             arrayString = "";
         }
 
@@ -290,6 +312,54 @@ public class LectorDeMatrices : MonoBehaviour
 
         cuadros[-y,x] = g;
 
+
+        // Agrgar las pistas en pantalla
+
+        TextMesh tm = new TextMesh();
+        string pista = "";
+
+       if (y == 0) {
+            Instantiate(pistasText);
+
+            float aux_coorY = -1.69f; // Variable que voy a utilizar en caso de que hayan multiples pistas
+
+            
+            foreach (string i in pistasColumnas[x]){
+
+                pista = pista + i + System.Environment.NewLine;
+                aux_coorY = aux_coorY + 0.6f;
+            }
+
+            pistasText.transform.position = new Vector3(coordenadasX, aux_coorY);
+
+            tm = pistasText.GetComponent("TextMesh") as TextMesh;
+            tm.text = " " + pista;
+
+            coordenadasX = coordenadasX + 1f;
+        }
+
+        pista = "";
+
+        if (x == 0) {
+            Instantiate(pistasText);
+            ;
+
+            float aux_coorX = -2.9f;
+
+            
+            foreach (string i in pistasFilas[-y])
+            {                
+                pista = pista + i + "  ";
+                aux_coorX = aux_coorX - 0.8f;
+            }
+            tm = pistasText.GetComponent("TextMesh") as TextMesh;
+            tm.text = pista;
+
+            pistasText.transform.position = new Vector3(aux_coorX, coordenadasY);
+
+            coordenadasY = coordenadasY + -1f;
+        }
+
      }
 
 
@@ -300,23 +370,19 @@ public class LectorDeMatrices : MonoBehaviour
 
         if (obj.getNonoGramPath() == "")
         {
-            Debug.Log("Debe elegir un Nonogram");
+            UnityEngine.Debug.Log("Debe elegir un Nonogram");
         }
 
         else
         {
 
-            StreamReader sr = new StreamReader(obj.getNonoGramPath());
-
-
+            StreamReader sr = new StreamReader(obj.getNonoGramPath()); //obj.getNonoGramPath()
 
             string line = "";
 
 
             string[] aux;
             short con = 0;
-
-
 
             while ((line = sr.ReadLine()) != null)
             { //Lee todas las lineas dentro del .txt
