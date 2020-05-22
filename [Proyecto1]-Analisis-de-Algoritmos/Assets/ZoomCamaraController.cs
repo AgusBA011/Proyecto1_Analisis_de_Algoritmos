@@ -17,9 +17,7 @@ public class ZoomCamaraController : MonoBehaviour
     {
         cam = Camera.main;
         targetZoom = cam.orthographicSize;
-
-
-        
+     
     }
 
     // Update is called once per frame
