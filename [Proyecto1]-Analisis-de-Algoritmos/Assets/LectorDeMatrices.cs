@@ -15,6 +15,8 @@ public class LectorDeMatrices : MonoBehaviour
 
     public  List<List<string>> pistasColumnas = new List<List<string>>();
 
+    private List<List<int>> animation = new List<List<int>>();
+
     public GameObject[,] cuadros;
 
     public int rows, columns;
@@ -32,6 +34,7 @@ public class LectorDeMatrices : MonoBehaviour
     private float coordenadasX = -2.83f;
     private float coordenadasY = -2.16f;
 
+    private static bool letanimation = true;
 
     void Start() {
 
@@ -73,13 +76,35 @@ public class LectorDeMatrices : MonoBehaviour
         tm.text = ((double)(sw.Elapsed.TotalMilliseconds * 1000000) /
             1000000).ToString("0.00") + " ms";
 
-        //";
     }
 
     //Función para volver al menú, se le otorga a un botón.
     public void BackMenu()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
+    }
+
+    //Algoritmo para realizar animación, no se usa porque pega mucho el programa.
+    IEnumerator CreateAnimation() {
+        
+        foreach (List<int> aux in animation) {
+            
+            GameObject aux2 = cuadros[aux[0], aux[1]];
+
+            if (aux[2] == 1)
+            {
+
+                aux2.GetComponent<SpriteRenderer>().sprite = spriteFill;
+                
+            }
+            else {
+
+                aux2.GetComponent<SpriteRenderer>().sprite = spriteEmpty;
+                
+            }
+            yield return new WaitForSeconds(0.05f);
+        }
+    
     }
 
     //Función que resuelve el nonogram utilizando backtracking
@@ -89,23 +114,27 @@ public class LectorDeMatrices : MonoBehaviour
         if (emptySpace(Matriz) == false) {
             return true;
         }
-        
-        if (j == columns) { 
+
+        if (j == columns) {
             i++;
             j = 0;
         }
-        
+
         if (i == rows) return true;
 
-        Matriz[i, j] = 1;
-        GameObject aux = cuadros[i, j];
+        List<int> auxList = new List<int>();
 
-        aux.GetComponent<SpriteRenderer>().sprite = spriteFill;
+        Matriz[i, j] = 1;
+
+        GameObject aux2 = cuadros[i, j];
+        aux2.GetComponent<SpriteRenderer>().sprite = spriteFill;
 
         if (isSafe(Matriz, i, j) && resolverNono(i, j + 1)) return true;
 
         Matriz[i, j] = -1;
-        aux.GetComponent<SpriteRenderer>().sprite = spriteEmpty;
+        aux2.GetComponent<SpriteRenderer>().sprite = spriteEmpty;
+  
+        
         if (isSafe(Matriz, i, j) && resolverNono(i, j + 1)) return true;
 
         return false;
@@ -123,20 +152,19 @@ public class LectorDeMatrices : MonoBehaviour
     bool isSafeR(int[,] Matriz, int i, int j) {
         //Checkeo de la fila
 
-        int k = 0;
-        int acc = 0;
+        int numPistas = 0;
+        int celdasBlue = 0;
         bool isLast = false;
         
         for (int aux = 0; aux <= j; aux++)
         {
-            //Debug.Log("Rows");
-            //Debug.Log(i.ToString() + aux.ToString() + " : " + Matriz[i, aux].ToString());
+            
             if (Matriz[i, aux] == 1)
             {
-                acc++;
+                celdasBlue++;
                 if (isLast != true)
                 {
-                    if (k >= pistasFilas[i].Count) return false;
+                    if (numPistas >= pistasFilas[i].Count) return false;
                 }
                 isLast = true;
             }
@@ -144,10 +172,10 @@ public class LectorDeMatrices : MonoBehaviour
             {
                 if (isLast == true)
                 {
-
-                    if (int.Parse(pistasFilas[i][k]) != acc) return false;
-                    acc = 0;
-                    k++;
+                    
+                    if (int.Parse(pistasFilas[i][numPistas]) != celdasBlue) return false;
+                    celdasBlue = 0;
+                    numPistas++;
                 }
                 isLast = false;
             }
@@ -159,11 +187,11 @@ public class LectorDeMatrices : MonoBehaviour
 
             if (isLast == true)
             {
-                return k == pistasFilas[i].Count - 1 && acc == int.Parse(pistasFilas[i][k]);
+                return numPistas == pistasFilas[i].Count - 1 && celdasBlue == int.Parse(pistasFilas[i][numPistas]);
             }
             else
             {
-                return k == pistasFilas[i].Count;
+                return numPistas == pistasFilas[i].Count;
             }
 
         }
@@ -171,7 +199,8 @@ public class LectorDeMatrices : MonoBehaviour
         {
             if (isLast)
             {
-                return acc <= int.Parse(pistasFilas[i][k]);
+
+                return celdasBlue <= int.Parse(pistasFilas[i][numPistas]);
             }
         }
         return true;
@@ -184,28 +213,29 @@ public class LectorDeMatrices : MonoBehaviour
 
         //Checkeo de la fila
 
-        int k = 0;
-        int acc = 0;
+        int numPistas = 0;
+        int celdasBlue = 0;
         bool isLast = false;
         
         for (int aux = 0; aux <= i; aux++) {
-            //Debug.Log("Columns");
-            //Debug.Log(aux.ToString() + j.ToString() + " : " + Matriz[aux,j].ToString());
+
+            
             if (Matriz[aux, j] == 1)
             {
-                acc++;
+                celdasBlue++;
                 if (isLast != true)
                 {
-                    if (k >= pistasColumnas[j].Count) return false;
+                    if (numPistas >= pistasColumnas[j].Count) return false;
                 }
                 isLast = true;
             }
             else {
                 if (isLast == true) {
+
                     
-                    if (int.Parse(pistasColumnas[j][k]) != acc) return false;
-                    acc = 0;
-                    k++;
+                    if (int.Parse(pistasColumnas[j][numPistas]) != celdasBlue) return false;
+                    celdasBlue = 0;
+                    numPistas++;
                 }
                 isLast = false;
             }
@@ -217,17 +247,17 @@ public class LectorDeMatrices : MonoBehaviour
             
             if (isLast == true)
             {
-                return k == pistasColumnas[j].Count - 1 && acc == int.Parse(pistasColumnas[j][k]);
+                return numPistas == pistasColumnas[j].Count - 1 && celdasBlue == int.Parse(pistasColumnas[j][numPistas]);
             }
             else
             {
-                return k == pistasColumnas[j].Count;
+                return numPistas == pistasColumnas[j].Count;
             }
 
         }
         else {
             if (isLast) {
-                return acc <= int.Parse(pistasColumnas[j][k]);
+                return celdasBlue <= int.Parse(pistasColumnas[j][numPistas]);
             }
         }
         return true;
